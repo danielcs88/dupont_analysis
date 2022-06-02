@@ -1,62 +1,61 @@
-#!/Users/daniel/miniforge3/envs/spyder/bin/python
-# %% [markdown]
-# # Assignment 1
+# ---
+# jupyter:
+#   jupytext:
+#     text_representation:
+#       extension: .py
+#       format_name: percent
+#       format_version: '1.3'
+#       jupytext_version: 1.13.8
+#   kernelspec:
+#     display_name: Python 3 (ipykernel)
+#     language: python
+#     name: python3
+# ---
+
+# %% [markdown] id="goN5BLi7Ukkm"
+#  # Assignment 1
 #
-# Daniel Cárdenas<br>
-# FIN6326<br>
-# `6102358`
+#  Daniel Cárdenas<br>
+#  FIN6326<br>
+#  `6102358`
 
-# %%
-# !pip install binarytree
+# %% [markdown] id="lXSA5n44Ukko"
+# <a href="https://colab.research.google.com/github/danielcs88/dupont_analysis/blob/master/dupont_analysis_assignment.ipynb" target="_parent"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a>
 
-# %%
-import re
+# %% colab={"base_uri": "https://localhost:8080/"} id="U1bplq9yUkko" outputId="d6a82cb9-53bb-4aa2-f852-135c32ae6632"
+# # !pip install binarytree
+# # !pip install sqlalchemy
+
+# %% id="SrGQonIRUkkp"
+# import re
 from typing import Union
 
 import matplotlib.pyplot as plt
 import pandas as pd
 from IPython.display import display
-from sqlalchemy import create_engine
 
-# %%
+# from sqlalchemy import create_engine
+
+# %% id="E1IOkRA4Ukkp"
 plt.rcParams["figure.dpi"] = 125
 get_ipython().run_line_magic("config", "InlineBackend.figure_format = 'retina'")
 
-
 # %%
-def sql_query(query: str) -> pd.DataFrame:
-    """
-    Helper function to run SQL queries on in-house Pandas DataFrames
-
-    Parameters
-    ----------
-    query : str
-        SQL query to run
-    Returns
-    -------
-    pd.DataFrame
-        DataFrame of results
-    """
-    REGEX = r"(FROM )(\w+)"
-    DF_NAME = re.search(REGEX, query)[2]
-    DF = eval(DF_NAME)
-    engine = create_engine("sqlite://", echo=False)
-    DF.to_sql(DF_NAME, con=engine)
-    RESULT = pd.DataFrame(engine.execute(query).fetchall())
-
-    return RESULT
-
-
 dollar_value = lambda x: f"${x:,.2f}"
 rate_value = lambda x: f"{x:.2%}"
 
+# %% id="xCDOsbEVUkkq"
+r_james = pd.read_csv(
+    "https://raw.githubusercontent.com/danielcs88/dupont_analysis/master/Call_Cert33893_123121.SDF",
+    sep=";",
+)
+b_united = pd.read_csv(
+    "https://raw.githubusercontent.com/danielcs88/dupont_analysis/master/Call_Cert58979_123121.SDF",
+    sep=";",
+)
 
-# %%
-r_james = pd.read_csv("Call_Cert33893_123121.SDF", sep=";")
-b_united = pd.read_csv("Call_Cert58979_123121.SDF", sep=";")
 
-
-# %%
+# %% id="gfSlXrEnUkkq"
 def financial_query(df: str, measure: str, measure_float=True) -> Union[float, str]:
     """
     Returns values from queried measure and specified bank DataFrame
@@ -77,19 +76,23 @@ def financial_query(df: str, measure: str, measure_float=True) -> Union[float, s
 
     """
 
+    df = eval(df)
+
     if measure_float:
         return float(
-            sql_query(f"SELECT * FROM {df} WHERE `Short Definition` LIKE '{measure}%'")[
-                "Value"
-            ].unique()[0]
+            df.loc[df["Short Definition"].str.startswith(measure)]["Value"].unique()[0]
+            # sql_query(f"SELECT * FROM {df} WHERE `Short Definition` LIKE '{measure}%'")[
+            #     "Value"
+            # ].unique()[0]
         )
     else:
-        return sql_query(
-            f"SELECT * FROM {df} WHERE `Short Definition` LIKE '{measure}%'"
-        )["Value"].iloc[0]
+        return df.loc[df["Short Definition"].str.startswith(measure)]["Value"].iloc[0]
+        # return sql_query(
+        #     f"SELECT * FROM {df} WHERE `Short Definition` LIKE '{measure}%'"
+        # )["Value"].iloc[0]
 
 
-# %%
+# %% id="5R9czhfQUkkr"
 def roe(bank: str) -> float:
     """
     Parameters
@@ -105,7 +108,7 @@ def roe(bank: str) -> float:
     return financial_query(bank, "Net income") / financial_query(bank, "Total equity")
 
 
-# %%
+# %% id="C3C_YGAZUkkr"
 def roa(bank: str) -> float:
     """
     Parameters
@@ -124,7 +127,7 @@ def roa(bank: str) -> float:
     )
 
 
-# %%
+# %% id="1r9zLaXhUkkr"
 def equity_multiplier(bank: str) -> float:
     """
     Parameters
@@ -143,7 +146,7 @@ def equity_multiplier(bank: str) -> float:
     )
 
 
-# %%
+# %% id="KioyNNDTUkks"
 def operating_income(bank: str) -> float:
     """
     Parameters
@@ -171,7 +174,7 @@ def operating_income(bank: str) -> float:
     )
 
 
-# %%
+# %% id="CrNvYsxHUkks"
 def return_on_sales(bank: str) -> float:
     """
     Calculates Return On Sales
@@ -190,7 +193,7 @@ def return_on_sales(bank: str) -> float:
     return financial_query(bank, "Net income") / operating_income(bank)
 
 
-# %%
+# %% id="ZYuWfO6aUkks"
 def asset_turnover(bank: str) -> float:
     """
     Returns Asset Turnover Rate
@@ -209,7 +212,7 @@ def asset_turnover(bank: str) -> float:
     return operating_income(bank) / financial_query(bank, "Total balance sheet assets")
 
 
-# %%
+# %% id="9qGf6XSjUkks"
 from binarytree import build
 
 
@@ -237,11 +240,11 @@ def dupont_analysis(bank: str) -> None:
     print(root)
 
 
-# %%
+# %% colab={"base_uri": "https://localhost:8080/"} id="ALPFgcUTUkks" outputId="87df2a0d-c9c3-4e1b-8220-a1617a160a51"
 print(*map(dupont_analysis, ["r_james", "b_united"]))
 
 
-# %%
+# %% id="8Ho-LvJVUkkt"
 def bank_series(bank: str) -> pd.Series:
     bank_dict = {
         "Name": financial_query(bank, "Legal title of bank", measure_float=False),
@@ -254,12 +257,12 @@ def bank_series(bank: str) -> pd.Series:
     return pd.Series(bank_dict)
 
 
-# %%
+# %% id="1D-q8nmOUkkt"
 banks_df = pd.concat(list(map(bank_series, ["r_james", "b_united"])), axis=1)
 banks_df.columns = banks_df.loc["Name"]
 banks_df.drop("Name", axis=0, inplace=True)
 
-# %%
+# %% colab={"base_uri": "https://localhost:8080/", "height": 143} id="1mk_aAuIUkkt" outputId="1d478885-71e4-4290-81b6-0f0b1f058517"
 display(
     banks_df.T.style.format(
         {
@@ -272,7 +275,7 @@ display(
     )
 )
 
-# %%
+# %% colab={"base_uri": "https://localhost:8080/", "height": 1000} id="-5z-HF8GUkkt" outputId="3b0ecbb4-7470-4970-a4b1-59ac88876c08"
 banks_df.T.plot(
     title="Dupont Analysis",
     subplots=True,
@@ -283,3 +286,59 @@ banks_df.T.plot(
 )
 plt.tight_layout()
 plt.show()
+
+
+# %%
+def operating_income_analysis(bank: str) -> float:
+    """
+    Parameters
+    ----------
+    bank : str
+        Name of bank pd.DataFrame.
+
+    Returns
+    -------
+    float
+        Operating Income.
+
+    """
+    interest_income = financial_query(bank, "Total interest income")
+    interest_expense = financial_query(bank, "Total interest expense")
+    loan_loss_provision = financial_query(bank, "Provision for loan and lease losses")
+    non_interest_income = financial_query(bank, "Total noninterest income")
+    return pd.Series({
+        "Name": financial_query(bank, "Legal title of bank", measure_float=False),
+        "Total interest income": float(interest_income),
+        "Total interest expense": float(-interest_expense),
+        "Provision for loan and lease losses": float(-loan_loss_provision),
+        "Total noninterest income": float(non_interest_income),
+    })
+
+
+# %%
+operating_df = pd.concat(list(map(operating_income_analysis, ["r_james", "b_united"])), axis=1)
+operating_df.columns = operating_df.loc["Name"]
+operating_df.drop("Name", axis=0, inplace=True)
+
+# %%
+import matplotlib.ticker as mtick
+
+
+
+operating_df.T.plot(
+    title="Operating Income Analysis",
+    subplots=True,
+    kind="barh",
+    figsize=(16, 9),
+    sharex=False,
+    grid=True,
+)
+
+plt.gca().xaxis.set_major_formatter('${x:,.0f}')
+
+# plt.gcf().xaxis.set_major_formatter('${x:1.2f}')
+# plt.gcf().xaxis.set_major_formatter(mtick.StrMethodFormatter("${x:,.0f}"))
+plt.tight_layout()
+plt.show()
+
+# %%
