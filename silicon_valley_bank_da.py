@@ -1,59 +1,45 @@
-# ---
-# jupyter:
-#   jupytext:
-#     text_representation:
-#       extension: .py
-#       format_name: percent
-#       format_version: '1.3'
-#       jupytext_version: 1.13.8
-#   kernelspec:
-#     display_name: Python 3 (ipykernel)
-#     language: python
-#     name: python3
-# ---
-
-# %% [markdown] id="goN5BLi7Ukkm"
-#  # Assignment 1
+# %% [markdown]
+# # Dupont Analysis for Silicon Valley Bank
 #
-#  Daniel Cárdenas<br>
-#  FIN6326<br>
-#  `6102358`
+# In light of the impending bankruptcy at Silicon Valley Bank. I will revisit
+# one of the main lectures learned during my Master of Science in Finance in
+# Commercial Banking.
+#
+# I will use the latest Call Report from the FFIEC (Federal Financial Institutions
+# Examination Council).
+#
+# The link to find this is:
+#
+# 1. Navigate to https://cdr.ffiec.gov/public/ManageFacsimiles.aspx
+# 2. Select **Call Report**
+# 3. Type the name of the bank in the **Institution Name** field.
+#    - After typing you should get a popup window with the report as PDF, with 4
+#      headers. Click on the one that says **Download SDF**.
+#
+#    <img width="1720" alt="image" src="https://user-images.githubusercontent.com/13838845/224463271-c58aff90-ca86-4e6a-bf31-c9ac21d1f0f9.png">
+#
+# Once you have downloaded the file, you can import it using Pandas function for
+# CSV files, just note that the delimiter is a semicolon **;**.
 
-# %% [markdown] id="lXSA5n44Ukko"
-# <a href="https://colab.research.google.com/github/danielcs88/dupont_analysis/blob/master/dupont_analysis_assignment.ipynb" target="_parent"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a>
 
-# %% colab={"base_uri": "https://localhost:8080/"} id="U1bplq9yUkko" outputId="d6a82cb9-53bb-4aa2-f852-135c32ae6632"
-# # !pip install binarytree
-# # !pip install sqlalchemy
-
-# %% id="SrGQonIRUkkp"
-# import re
+# %%
 from typing import Union
 
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mtick
 import pandas as pd
+from binarytree import build
 from IPython.display import display
 
-# from sqlalchemy import create_engine
-
-# %% id="E1IOkRA4Ukkp"
-plt.rcParams["figure.dpi"] = 125
-get_ipython().run_line_magic("config", "InlineBackend.figure_format = 'retina'")
-
 # %%
+plt.rcParams["figure.dpi"] = 125
 dollar_value = lambda x: f"${x:,.2f}"
 rate_value = lambda x: f"{x:.2%}"
 
-# %% id="xCDOsbEVUkkq"
-r_james = pd.read_csv(
-    "https://raw.githubusercontent.com/danielcs88/dupont_analysis/master/Call_Cert33893_123121.SDF",
-    sep=";",
-)
-b_united = pd.read_csv(
-    "https://raw.githubusercontent.com/danielcs88/dupont_analysis/master/Call_Cert58979_123121.SDF",
-    sep=";",
-)
+# %%
+svb = pd.read_csv("Call_Cert24735_123122.SDF", sep=";")
+r_james = pd.read_csv("Call_Cert33893_123122.SDF", sep=";")
+b_united = pd.read_csv("Call_Cert58979_123122.SDF", sep=";")
 
 
 # %%
@@ -74,7 +60,7 @@ def report_date(df: pd.DataFrame) -> str:
     )
 
 
-# %% id="gfSlXrEnUkkq"
+# %%
 def financial_query(df: str, measure: str, measure_float=True) -> Union[float, str]:
     """
     Returns values from queried measure and specified bank DataFrame
@@ -100,18 +86,12 @@ def financial_query(df: str, measure: str, measure_float=True) -> Union[float, s
     if measure_float:
         return float(
             df.loc[df["Short Definition"].str.startswith(measure)]["Value"].unique()[0]
-            # sql_query(f"SELECT * FROM {df} WHERE `Short Definition` LIKE '{measure}%'")[
-            #     "Value"
-            # ].unique()[0]
         )
     else:
         return df.loc[df["Short Definition"].str.startswith(measure)]["Value"].iloc[0]
-        # return sql_query(
-        #     f"SELECT * FROM {df} WHERE `Short Definition` LIKE '{measure}%'"
-        # )["Value"].iloc[0]
 
 
-# %% id="5R9czhfQUkkr"
+# %%
 def roe(bank: str) -> float:
     """
     Parameters
@@ -127,7 +107,7 @@ def roe(bank: str) -> float:
     return financial_query(bank, "Net income") / financial_query(bank, "Total equity")
 
 
-# %% id="C3C_YGAZUkkr"
+# %%
 def roa(bank: str) -> float:
     """
     Parameters
@@ -146,7 +126,7 @@ def roa(bank: str) -> float:
     )
 
 
-# %% id="1r9zLaXhUkkr"
+# %%
 def equity_multiplier(bank: str) -> float:
     """
     Parameters
@@ -165,7 +145,7 @@ def equity_multiplier(bank: str) -> float:
     )
 
 
-# %% id="KioyNNDTUkks"
+# %%
 def operating_income(bank: str) -> float:
     """
     Parameters
@@ -193,7 +173,7 @@ def operating_income(bank: str) -> float:
     )
 
 
-# %% id="CrNvYsxHUkks"
+# %%
 def return_on_sales(bank: str) -> float:
     """
     Calculates Return On Sales
@@ -212,7 +192,7 @@ def return_on_sales(bank: str) -> float:
     return financial_query(bank, "Net income") / operating_income(bank)
 
 
-# %% id="ZYuWfO6aUkks"
+# %%
 def asset_turnover(bank: str) -> float:
     """
     Returns Asset Turnover Rate
@@ -231,10 +211,7 @@ def asset_turnover(bank: str) -> float:
     return operating_income(bank) / financial_query(bank, "Total balance sheet assets")
 
 
-# %% id="9qGf6XSjUkks"
-from binarytree import build
-
-
+# %%
 def dupont_analysis(bank: str) -> None:
     """
     Prints a DuPont Analysis of bank.
@@ -255,15 +232,17 @@ def dupont_analysis(bank: str) -> None:
         f"Return on Sales: {rate_value(return_on_sales(bank))}",
     ]
     root = build(values)
-    print(financial_query(bank, "Legal title of bank", measure_float=False))
+    print(
+        f'{financial_query(bank, "Legal title of bank", measure_float=False)} {report_date(eval(bank))}'
+    )
     print(root)
 
 
-# %% colab={"base_uri": "https://localhost:8080/"} id="ALPFgcUTUkks" outputId="87df2a0d-c9c3-4e1b-8220-a1617a160a51"
-print(*map(dupont_analysis, ["r_james", "b_united"]))
+# %%
+print(*map(dupont_analysis, ["svb", "b_united", "r_james"]))
 
 
-# %% id="8Ho-LvJVUkkt"
+# %%
 def bank_series(bank: str) -> pd.Series:
     bank_dict = {
         "Name": financial_query(bank, "Legal title of bank", measure_float=False),
@@ -276,12 +255,12 @@ def bank_series(bank: str) -> pd.Series:
     return pd.Series(bank_dict)
 
 
-# %% id="1D-q8nmOUkkt"
-banks_df = pd.concat(list(map(report_date, ["r_james", "b_united"])), axis=1)
+# %%
+banks_df = pd.concat(list(map(bank_series, ["svb", "b_united", "r_james"])), axis=1)
 banks_df.columns = banks_df.loc["Name"]
 banks_df.drop("Name", axis=0, inplace=True)
 
-# %% colab={"base_uri": "https://localhost:8080/", "height": 143} id="1mk_aAuIUkkt" outputId="1d478885-71e4-4290-81b6-0f0b1f058517"
+# %%
 display(
     banks_df.T.style.format(
         {
@@ -294,9 +273,10 @@ display(
     )
 )
 
-# %% colab={"base_uri": "https://localhost:8080/", "height": 1000} id="-5z-HF8GUkkt" outputId="3b0ecbb4-7470-4970-a4b1-59ac88876c08"
+# %%
+# create the plot
 banks_df.T.plot(
-    title=f"Dupont Analysis: {set(map(report_date, (r_james, b_united))).pop()}",
+    title=f"Dupont Analysis: {set(map(report_date, (svb, r_james, b_united))).pop()}",
     subplots=True,
     kind="barh",
     figsize=(16, 9),
@@ -304,12 +284,14 @@ banks_df.T.plot(
     grid=True,
 )
 
+# format the x-axis as a percentage for all plots except the second one
 for i, ax in enumerate(plt.gcf().axes):
     if i != 1:
         ax.xaxis.set_major_formatter(mtick.FuncFormatter(lambda x, _: f"{x:.1%}"))
     else:
         ax.xaxis.set_major_formatter(mtick.FuncFormatter(lambda x, _: f"{x:.2f}"))
 
+# adjust the layout and display the plot
 plt.tight_layout()
 plt.show()
 
@@ -345,15 +327,26 @@ def operating_income_analysis(bank: str) -> float:
 
 # %%
 operating_df = pd.concat(
-    list(map(operating_income_analysis, ["r_james", "b_united"])), axis=1
+    list(map(operating_income_analysis, ["svb", "b_united", "r_james"])), axis=1
 )
 operating_df.columns = operating_df.loc["Name"]
 operating_df.drop("Name", axis=0, inplace=True)
 
-# %%
 
+# %%
+def display_df_format(DF: Union[pd.DataFrame, pd.Series], float_format: str):
+    r"""
+    Display pd.DataFrame without changing float format.
+    """
+    with pd.option_context("display.float_format", float_format.format):
+        display(DF)
+
+
+operating_df.T.pipe(display_df_format, "${:,.0f}")
+
+# %%
 operating_df.T.plot(
-    title="Operating Income Analysis",
+    title=f"Operating Income Analysis: {set(map(report_date, (svb, r_james, b_united))).pop()}",
     subplots=True,
     kind="barh",
     figsize=(16, 9),
@@ -361,10 +354,10 @@ operating_df.T.plot(
     grid=True,
 )
 
+
 for ax in plt.gcf().axes:
     ax.xaxis.set_major_formatter(mtick.FuncFormatter(lambda x, _: f"${x:,.0f}"))
 
+# adjust the layout and display the plot
 plt.tight_layout()
 plt.show()
-
-# %%
